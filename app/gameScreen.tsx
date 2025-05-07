@@ -1,27 +1,34 @@
 import PlayingCard from "@/components/PlayingCard";
+import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
-const cards = [
+const initialCards = [
   "A♠️",
   "A♠️",
   "A♠️",
+  "K♠️",
   "A♠️",
   "A♠️",
   "A♠️",
+  "Q♠️",
   "A♠️",
   "A♠️",
   "A♠️",
-  "A♠️",
-  "A♠️",
-  "A♠️",
+  "10♠️",
   "A♠️",
 ];
 
 type PlayerNumber = 1 | 2 | 3 | 4;
 
 const GameScreen = () => {
-  // For demo purposes, let's say it's player 1's turn
+  const [cards, setCards] = useState(initialCards);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const currentPlayer: PlayerNumber = 2;
+
+  const handleCardSelect = (card: string, index: number) => {
+    setSelectedCard(card);
+    setCards(prevCards => prevCards.filter((_, i) => i !== index));
+  };
 
   const getTurnIndicator = (playerNum: PlayerNumber) => {
     if (currentPlayer !== playerNum) return null;
@@ -33,7 +40,7 @@ const GameScreen = () => {
       {/* Top Player */}
       <View style={styles.topPlayer}>
         <Text style={styles.playerText}>
-          Player 2 {getTurnIndicator(2)}
+          Player 3 {getTurnIndicator(3)}
         </Text>
       </View>
 
@@ -42,13 +49,20 @@ const GameScreen = () => {
         {/* Left Player */}
         <View style={styles.sidePlayer}>
           <Text style={styles.playerText}>
-            Player 3 {getTurnIndicator(3)}
+            Player 2 {getTurnIndicator(2)}
           </Text>
         </View>
 
         {/* Center Area */}
-        <View style={styles.centerArea}>
-          <Text>GameScreen</Text>
+        <View style={[
+          styles.centerArea,
+          selectedCard && { backgroundColor: '#90EE90' } // Light green when card is selected
+        ]}>
+          {selectedCard && (
+            <View style={styles.selectedCardContainer}>
+              <PlayingCard card={selectedCard} />
+            </View>
+          )}
         </View>
 
         {/* Right Player */}
@@ -61,16 +75,23 @@ const GameScreen = () => {
 
       {/* Bottom Player with Cards */}
       <View style={styles.cardContainer}>
-        <Text style={styles.playerText}>
-          Player 1 {getTurnIndicator(1)}
-        </Text>
+        <View style={styles.playerInfo}>
+          <Text style={styles.playerText}>
+            Player 1 {getTurnIndicator(1)}
+          </Text>
+          <Text style={styles.cardCount}>{cards.length} cards</Text>
+        </View>
         <ScrollView
           horizontal
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
         >
           {cards.map((item, index) => (
-            <PlayingCard key={index} card={item} />
+            <PlayingCard 
+              key={index} 
+              card={item} 
+              onPress={() => handleCardSelect(item, index)}
+            />
           ))}
         </ScrollView>
       </View>
@@ -107,6 +128,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  selectedCardContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardContainer: {
     position: 'absolute',
@@ -130,5 +156,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     textAlign: 'center',
+  },
+  playerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  cardCount: {
+    fontSize: 14,
+    color: '#666',
   },
 });
