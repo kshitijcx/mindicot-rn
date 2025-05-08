@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 const SOCKET_URL = 'https://mindicot-be.onrender.com/';
 
 interface GameLobbyProps {
-  onGameStart: () => void;
+  onGameStart: (gameData: any) => void;
 }
 
 export default function GameLobby({ onGameStart }: GameLobbyProps) {
@@ -18,7 +18,7 @@ export default function GameLobby({ onGameStart }: GameLobbyProps) {
   useEffect(() => {
     console.log('Attempting to connect to socket server at:', SOCKET_URL);
     const newSocket = io(SOCKET_URL);
-
+    
     newSocket.on('connect', () => {
       console.log('Socket connected successfully!');
     });
@@ -41,11 +41,13 @@ export default function GameLobby({ onGameStart }: GameLobbyProps) {
 
     newSocket.on('gameStart', (gameData) => {
       console.log('Game started with data:', gameData);
-      onGameStart();
+      onGameStart(gameData);
     });
 
     return () => {
-      newSocket.disconnect();
+      if (newSocket) {
+        newSocket.disconnect();
+      }
     };
   }, [onGameStart]);
 

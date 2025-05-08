@@ -5,13 +5,19 @@ import GameLobby from '../components/GameLobby';
 
 export default function GameScreen() {
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameData, setGameData] = useState<any>(null);
+
+  const handleGameStart = (data: any) => {
+    setGameData(data);
+    setGameStarted(true);
+  };
 
   return (
     <View style={styles.container}>
       {!gameStarted ? (
-        <GameLobby onGameStart={() => setGameStarted(true)} />
+        <GameLobby onGameStart={handleGameStart} />
       ) : (
-        <GameBoard />
+        <GameBoard initialGameData={gameData} />
       )}
     </View>
   );
