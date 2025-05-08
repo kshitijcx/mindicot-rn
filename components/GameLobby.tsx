@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { io } from 'socket.io-client';
 
 const SOCKET_URL = 'https://mindicot-be.onrender.com/';
@@ -18,7 +18,7 @@ export default function GameLobby({ onGameStart }: GameLobbyProps) {
   useEffect(() => {
     console.log('Attempting to connect to socket server at:', SOCKET_URL);
     const newSocket = io(SOCKET_URL);
-    
+
     newSocket.on('connect', () => {
       console.log('Socket connected successfully!');
     });
@@ -52,6 +52,9 @@ export default function GameLobby({ onGameStart }: GameLobbyProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mendicot Game</Text>
+      <View style={{ width: 200, height: 200, marginBottom: 20 }}>
+        <Image style={{ width: 200, height: 200 }} source={require('../assets/images/game-icon.png')} resizeMode='contain' />
+      </View>
       <Text style={styles.status}>
         Waiting for players... ({waitingStatus.playersConnected}/4)
       </Text>
