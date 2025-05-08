@@ -82,37 +82,41 @@ export default function GameBoard() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mendicot Game</Text>
-        <Text style={styles.trump}>Trump: {gameState.trumpSuit}</Text>
+      <View style={styles.contentContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Mendicot Game</Text>
+          <Text style={styles.trump}>Trump: {gameState.trumpSuit}</Text>
+        </View>
+
+        <View style={styles.trickArea}>
+          {gameState.currentTrick.map((play, index) => (
+            <Card
+              key={index}
+              suit={play.card.suit}
+              value={play.card.value}
+              disabled={true}
+            />
+          ))}
+        </View>
+
+        <View style={styles.handContainer}>
+          <ScrollView horizontal contentContainerStyle={styles.hand}>
+            {gameState.hand.map((card, index) => (
+              <Card
+                key={index}
+                suit={card.suit}
+                value={card.value}
+                onPress={() => handleCardPress(card)}
+                disabled={!isCardPlayable(card)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <Text style={styles.turn}>
+          {gameState.turn === socket?.id ? "Your turn" : "Waiting for other players..."}
+        </Text>
       </View>
-
-      <View style={styles.trickArea}>
-        {gameState.currentTrick.map((play, index) => (
-          <Card
-            key={index}
-            suit={play.card.suit}
-            value={play.card.value}
-            disabled={true}
-          />
-        ))}
-      </View>
-
-      <ScrollView horizontal style={styles.hand}>
-        {gameState.hand.map((card, index) => (
-          <Card
-            key={index}
-            suit={card.suit}
-            value={card.value}
-            onPress={() => handleCardPress(card)}
-            disabled={!isCardPlayable(card)}
-          />
-        ))}
-      </ScrollView>
-
-      <Text style={styles.turn}>
-        {gameState.turn === socket?.id ? "Your turn" : "Waiting for other players..."}
-      </Text>
     </View>
   );
 }
@@ -120,6 +124,11 @@ export default function GameBoard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
     padding: 20,
   },
   header: {
@@ -129,10 +138,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   trump: {
     fontSize: 18,
     marginTop: 5,
+    textAlign: 'center',
   },
   trickArea: {
     flexDirection: 'row',
@@ -141,13 +152,21 @@ const styles = StyleSheet.create({
     minHeight: 120,
     marginBottom: 20,
   },
-  hand: {
-    flexGrow: 0,
+  handContainer: {
+    flex: 1,
+    justifyContent: 'center',
     marginBottom: 20,
+  },
+  hand: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
   },
   turn: {
     textAlign: 'center',
     fontSize: 16,
     color: '#666',
+    marginBottom: 20,
   },
 }); 

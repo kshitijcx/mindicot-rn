@@ -51,22 +51,32 @@ export default function GameLobby({ onGameStart }: GameLobbyProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mendicot Game</Text>
-      <View style={{ width: 200, height: 200, marginBottom: 20 }}>
-        <Image style={{ width: 200, height: 200 }} source={require('../assets/images/game-icon.png')} resizeMode='contain' />
+      <View style={styles.contentContainer}>
+        <Text style={styles.title}>Mendicot Game</Text>
+        <View style={styles.imageContainer}>
+          <Image 
+            style={styles.image} 
+            source={require('../assets/images/game-icon.png')} 
+            resizeMode='contain' 
+          />
+        </View>
+        <Text style={styles.status}>
+          Waiting for players... ({waitingStatus.playersConnected}/4)
+        </Text>
+        <Text style={styles.subtitle}>
+          {waitingStatus.playersNeeded} more players needed
+        </Text>
       </View>
-      <Text style={styles.status}>
-        Waiting for players... ({waitingStatus.playersConnected}/4)
-      </Text>
-      <Text style={styles.subtitle}>
-        {waitingStatus.playersNeeded} more players needed
-      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -76,13 +86,27 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
+  },
+  imageContainer: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   status: {
     fontSize: 18,
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
   },
 }); 
