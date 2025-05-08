@@ -1,41 +1,25 @@
-import { Image, Text, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import GameIcon from "@/assets/images/game-icon.png";
-import { useRouter } from "expo-router";
+import React, { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import GameBoard from '../components/GameBoard';
+import GameLobby from '../components/GameLobby';
 
-export default function Index() {
-  const router = useRouter();
+export default function GameScreen() {
+  const [gameStarted, setGameStarted] = useState(false);
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        alignItems: "center",
-        padding: 50,
-        justifyContent: "space-evenly",
-        backgroundColor: "white",
-      }}
-    >
-      <Text style={{ fontSize: 30, fontWeight: "bold" }}>MINDICOT</Text>
-      <Image
-        source={GameIcon}
-        style={{ height: 200, width: 200 }}
-        resizeMode="contain"
-      />
-      <TouchableOpacity
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: "lightgray",
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderRadius: 24,
-          elevation: 6,
-        }}
-        onPress={() => router.navigate("/gameScreen")}
-      >
-        <Text style={{ fontSize: 24, fontWeight: "bold" }}>START GAME ➡️</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+    <View style={styles.container}>
+      {!gameStarted ? (
+        <GameLobby onGameStart={() => setGameStarted(true)} />
+      ) : (
+        <GameBoard />
+      )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+});
