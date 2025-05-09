@@ -59,6 +59,7 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
                 suit={play.card.suit} 
                 rank={play.card.rank} 
                 disabled={true} 
+                onPress={() => {}}
               />
             </View>
           );
