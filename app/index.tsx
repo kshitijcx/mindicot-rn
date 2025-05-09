@@ -352,6 +352,8 @@ export default function App() {
           cards={gameState.hand} 
           onPlayCard={handlePlayCard}
           enabled={gameState.myTurn}
+          currentTrick={gameState.currentTrick}
+          trumpSuit={gameState.trumpSuit}
         />
       </SafeAreaView>
     );

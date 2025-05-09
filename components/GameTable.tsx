@@ -71,9 +71,6 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
           </Text>
         )}
         
-        {/* Display turn indicator or trick winner */}
-
-        
         {/* Player positions labels */}
         <View style={[
           styles.positionLabel, 

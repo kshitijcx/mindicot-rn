@@ -2,7 +2,31 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Card from './Card';
 
-const PlayerHand = ({ cards, onPlayCard, enabled = true }) => {
+interface Card {
+  suit: string;
+  rank: string | number;
+}
+
+interface TrickPlay {
+  playerIndex: number;
+  card: Card;
+}
+
+interface PlayerHandProps {
+  cards: Card[];
+  onPlayCard: (card: Card) => void;
+  enabled?: boolean;
+  currentTrick?: TrickPlay[];
+  trumpSuit?: string | null;
+}
+
+const PlayerHand: React.FC<PlayerHandProps> = ({ 
+  cards, 
+  onPlayCard, 
+  enabled = true, 
+  currentTrick = [], 
+  trumpSuit = null 
+}) => {
   // Sort cards by suit and rank
   const sortedCards = [...cards].sort((a, b) => {
     const suits = ['♠', '♥', '♦', '♣'];
@@ -14,6 +38,30 @@ const PlayerHand = ({ cards, onPlayCard, enabled = true }) => {
     
     return ranks.indexOf(a.rank.toString()) - ranks.indexOf(b.rank.toString());
   });
+
+  // Determine if a card is playable based on game rules
+  const isCardPlayable = (card: Card): boolean => {
+    // If it's not your turn, no cards are playable
+    if (!enabled) return false;
+
+    // If no cards have been played in the current trick, all cards are playable
+    if (currentTrick.length === 0) return true;
+
+    // Get the suit of the first card played in the current trick
+    const leadingSuit = currentTrick[0].card.suit;
+
+    // If the card matches the leading suit or is a trump, it's playable
+    if (card.suit === leadingSuit || card.suit === trumpSuit) return true;
+
+    // Check if player has any cards of the leading suit
+    const hasLeadingSuit = cards.some(c => c.suit === leadingSuit);
+    
+    // If player has no cards of the leading suit, all cards are playable
+    if (!hasLeadingSuit) return true;
+
+    // Otherwise, only cards matching the leading suit or trump are playable
+    return false;
+  };
 
   return (
     <View style={styles.container}>
@@ -29,7 +77,7 @@ const PlayerHand = ({ cards, onPlayCard, enabled = true }) => {
             suit={card.suit}
             rank={card.rank}
             onPress={onPlayCard}
-            disabled={!enabled}
+            disabled={!isCardPlayable(card)}
           />
         ))}
         {cards.length === 0 && (
@@ -43,13 +91,11 @@ const PlayerHand = ({ cards, onPlayCard, enabled = true }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: '#F5F5F5',
     borderTopWidth: 1,
-    borderTopColor: '#444',
-    paddingBottom: 20, // Extra padding at bottom for safe area
+    borderTopColor: '#E0E0E0',
   },
   title: {
-    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
@@ -57,16 +103,14 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 5,
   },
   emptyText: {
-    color: '#ccc',
-    fontSize: 16,
-    padding: 20,
-  }
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
+  },
 });
 
 export default PlayerHand;
