@@ -1,3 +1,9 @@
+# Demo Video of Mindicot Game
+
+
+https://github.com/user-attachments/assets/28c109c5-eab7-4046-97e9-834020e95ea9
+
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
