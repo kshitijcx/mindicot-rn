@@ -145,11 +145,30 @@ export default function App() {
     socket.on('card_played', ({ playerId, card, nextTurn }) => {
       console.log('Card played', playerId, card, 'Next turn:', nextTurn);
       
+      // Skip updating trick if it was a self-played card (already handled in handlePlayCard)
+      if (playerId === socket.id) {
+        // Still update the turn info
+        setGameState(prev => {
+          // Update current turn if provided
+          const newCurrentTurn = nextTurn !== undefined ? nextTurn : prev.currentTurn;
+          
+          // Check if it's my turn now
+          const isMyTurn = newCurrentTurn === prev.playerIndex;
+          
+          console.log(`Own card played, next player: ${newCurrentTurn}, my index: ${prev.playerIndex}, my turn: ${isMyTurn}`);
+          
+          return {
+            ...prev,
+            currentTurn: newCurrentTurn,
+            myTurn: isMyTurn
+          };
+        });
+        return;
+      }
+      
       setGameState(prev => {
         // Figure out the player index for this card
-        const playerIndex = gameState.currentTrick.length === 0 ? 
-          (prev.currentTurn !== null ? prev.currentTurn : 0) : 
-          (prev.currentTurn !== null ? prev.currentTurn : 0);
+        const playerIndex = prev.currentTurn !== null ? prev.currentTurn : 0;
           
         // Add card to current trick with player index
         const updatedTrick = [...prev.currentTrick, { 
@@ -177,22 +196,25 @@ export default function App() {
     socket.on('trick_complete', ({ tricksWon, tensCount, nextTurn }) => {
       console.log('Trick complete', tricksWon, tensCount, 'Next turn:', nextTurn);
       
-      setGameState(prev => {
-        // Update current turn if provided
-        const newCurrentTurn = nextTurn !== undefined ? nextTurn : prev.currentTurn;
-        
-        // Check if it's my turn now
-        const isMyTurn = newCurrentTurn === prev.playerIndex;
-        
-        return {
-          ...prev,
-          tricksWon,
-          tensCount,
-          currentTrick: [], // Clear the trick
-          currentTurn: newCurrentTurn,
-          myTurn: isMyTurn
-        };
-      });
+      // Delay clearing the trick to allow players to see the final cards
+      setTimeout(() => {
+        setGameState(prev => {
+          // Update current turn if provided
+          const newCurrentTurn = nextTurn !== undefined ? nextTurn : prev.currentTurn;
+          
+          // Check if it's my turn now
+          const isMyTurn = newCurrentTurn === prev.playerIndex;
+          
+          return {
+            ...prev,
+            tricksWon,
+            tensCount,
+            currentTrick: [], // Clear the trick
+            currentTurn: newCurrentTurn,
+            myTurn: isMyTurn
+          };
+        });
+      }, 1000); // 1 second delay before clearing the trick display
     });
     
     // Add event listener for current turn updates
@@ -289,14 +311,38 @@ export default function App() {
   // Play card handler
   const handlePlayCard = (card) => {
     if (!socket || !gameState.gameStarted || !gameState.myTurn || gameState.gameOver) return;
-    socket.emit('play_card', card);
     
     // Remove card from hand locally for immediate feedback
-    setGameState(prev => ({
-      ...prev,
-      hand: prev.hand.filter(c => !(c.suit === card.suit && c.rank === card.rank)),
-      myTurn: false // Set myTurn to false until server confirms next turn
-    }));
+    setGameState(prev => {
+      // Check if this is the 4th card of a trick
+      const isLastCardOfTrick = prev.currentTrick.length === 3;
+
+      // Add the card to current trick display right away
+      const updatedTrick = [...prev.currentTrick, { 
+        playerIndex: prev.playerIndex, 
+        card: { suit: card.suit, rank: card.rank } 
+      }];
+
+      return {
+        ...prev,
+        hand: prev.hand.filter(c => !(c.suit === card.suit && c.rank === card.rank)),
+        myTurn: false, // Set myTurn to false until server confirms next turn
+        currentTrick: updatedTrick // Update trick with the played card
+      };
+    });
+
+    // Check if this is the last card of a trick (4th card)
+    const isLastCardOfTrick = gameState.currentTrick.length === 3;
+    
+    if (isLastCardOfTrick) {
+      // If it's the last card, delay sending to the server to allow UI to show the card
+      setTimeout(() => {
+        socket.emit('play_card', card);
+      }, 1500); // 1.5 second delay before processing the trick
+    } else {
+      // Regular case, send immediately
+      socket.emit('play_card', card);
+    }
   };
 
   // Get my team index
