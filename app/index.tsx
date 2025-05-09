@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Image,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -296,6 +297,10 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>Mendicot Card Game</Text>
       
+      <View style={{marginBottom: 30}}>
+        <Image source={require('../assets/images/game-icon.png')} style={{width: 100, height: 100}} resizeMode="contain" />
+      </View>
+
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>
           {connected 
