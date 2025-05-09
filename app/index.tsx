@@ -27,8 +27,9 @@ export default function App() {
     gameStarted: false,
     gameOver: false,
     winner: null,
+    gameResult: null, // Added to store game result message
     myTurn: false,
-    currentTurn: null // Add this to track current turn
+    currentTurn: null
   });
 
   // Initialize socket connection
@@ -58,6 +59,7 @@ export default function App() {
         gameStarted: false,
         gameOver: false,
         winner: null,
+        gameResult: null,
         myTurn: false,
         currentTurn: null
       });
@@ -203,23 +205,32 @@ export default function App() {
       }));
     });
 
-    socket.on('game_over', ({ winner, finalStats }) => {
-      console.log('Game over', winner, finalStats);
+    // Fixed game_over event handler
+    socket.on('game_over', (result) => {
+      console.log('Game over', result);
+      
+      // Extract the relevant information from the result object
+      const { outcome, winner, message, finalStats } = result;
+      
+      // Update game state with game over information
       setGameState(prev => ({
         ...prev,
         gameOver: true,
-        winner,
+        winner: outcome === 'tie' ? 'Tie' : winner,
+        gameResult: message,
         tricksWon: finalStats.tricksWon,
-        tensCount: finalStats.tensCount
+        tensCount: finalStats.tensCount,
+        myTurn: false // Nobody's turn when game is over
       }));
       
+      // Show game over alert
       Alert.alert(
         "Game Over",
-        `${winner} has won the game!`,
+        message,
         [{ text: "OK" }]
       );
     });
-
+    
     socket.on('game_reset', () => {
       console.log('Game reset');
       setGameState(prev => ({
@@ -232,6 +243,7 @@ export default function App() {
         gameStarted: false,
         gameOver: false,
         winner: null,
+        gameResult: null,
         myTurn: false,
         currentTurn: null
       }));
@@ -239,7 +251,7 @@ export default function App() {
 
     socket.on('invalid_move', (error) => {
       console.log('Invalid move', error);
-      Alert.alert("Invalid Move", error.message);
+      Alert.alert("Invalid Move", error);
     });
 
     socket.on('error', ({ message }) => {
@@ -324,8 +336,40 @@ export default function App() {
     </View>
   );
 
+  // Render game over screen
+  const renderGameOver = () => {
+    const myTeam = getMyTeam();
+    return (
+      <SafeAreaView style={styles.gameContainer}>
+        <View style={styles.gameOverContainer}>
+          <Text style={styles.gameOverTitle}>Game Over</Text>
+          
+          <Text style={styles.gameOverText}>{gameState.gameResult}</Text>
+          
+          <View style={styles.scoreContainer}>
+            <Text style={styles.scoreText}>
+              Team {myTeam}: {gameState.tricksWon[myTeam]} tricks, {gameState.tensCount[myTeam]} tens
+            </Text>
+            <Text style={styles.scoreText}>
+              Team {1-myTeam}: {gameState.tricksWon[1-myTeam]} tricks, {gameState.tensCount[1-myTeam]} tens
+            </Text>
+          </View>
+          
+          <Text style={styles.waitingText}>
+            Waiting for players to reconnect...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Render game screen
   const renderGame = () => {
+    // If game is over, show game over screen instead
+    if (gameState.gameOver) {
+      return renderGameOver();
+    }
+  
     const myTeam = getMyTeam();
     return (
       <SafeAreaView style={styles.gameContainer}>
@@ -440,6 +484,44 @@ const styles = StyleSheet.create({
   debugText: {
     color: '#BBB',
     fontSize: 12,
+    fontStyle: 'italic',
+  },
+  // Game over screen styles
+  gameOverContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    padding: 20,
+  },
+  gameOverTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFC107',
+    marginBottom: 20,
+  },
+  gameOverText: {
+    fontSize: 20,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  scoreContainer: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 40,
+    width: '100%',
+  },
+  scoreText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginVertical: 5,
+  },
+  waitingText: {
+    color: '#BBB',
+    fontSize: 14,
     fontStyle: 'italic',
   }
 });

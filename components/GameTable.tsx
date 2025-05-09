@@ -68,7 +68,7 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
         {/* Empty table message */}
         {currentTrick.length === 0 && (
           <Text style={styles.emptyTableText}>
-            New trick will start here
+            Empty Table
           </Text>
         )}
         
