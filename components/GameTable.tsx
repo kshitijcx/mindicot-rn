@@ -12,16 +12,15 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
   };
   
   // For debugging
-  console.log("Current trick:", JSON.stringify(currentTrick), "Player index:", playerIndex);
+  console.log("Current trick:", JSON.stringify(currentTrick), "Player index:", playerIndex, "Current turn:", currentTurn);
   
   // Calculate whose turn it is (relative to current player)
   const getCurrentTurnRelative = () => {
-    if (currentTrick.length < 4) {
-      // During a trick, it's the next player's turn after the last card played
-      const nextPlayerIndex = currentTrick.length % 4;
-      return getRelativePosition(nextPlayerIndex);
+    // Use the server-provided currentTurn value to determine whose turn it is
+    if (currentTurn !== null && currentTurn !== undefined) {
+      return getRelativePosition(currentTurn);
     }
-    // If trick is complete (should never happen as the trick gets cleared)
+    // Fallback if currentTurn isn't provided
     return null;
   };
 
@@ -44,6 +43,9 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
     styles.leftPosition    // Left opponent
   ];
 
+  // Get current turn indicator
+  const currentTurnRelative = getCurrentTurnRelative();
+
   return (
     <View style={styles.tableContainer}>
       <View style={styles.table}>
@@ -58,7 +60,6 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
                 rank={play.card.rank} 
                 disabled={true} 
               />
-              <Text style={styles.playerLabel}>{getPlayerLabel(relativePos)}</Text>
             </View>
           );
         })}
@@ -70,34 +71,37 @@ const GameTable = ({ currentTrick = [], playerIndex, currentTurn }) => {
           </Text>
         )}
         
+        {/* Display turn indicator or trick winner */}
+
+        
         {/* Player positions labels */}
         <View style={[
           styles.positionLabel, 
           styles.topPositionLabel,
-          getCurrentTurnRelative() === 2 && styles.activeTurnLabel
+          currentTurnRelative === 2 && styles.activeTurnLabel
         ]}>
-          <Text style={styles.labelText}>Partner {getCurrentTurnRelative() === 2 ? '(Turn)' : ''}</Text>
+          <Text style={styles.labelText}>Partner {currentTurnRelative === 2 ? '(Turn)' : ''}</Text>
         </View>
         <View style={[
           styles.positionLabel, 
           styles.rightPositionLabel,
-          getCurrentTurnRelative() === 1 && styles.activeTurnLabel
+          currentTurnRelative === 1 && styles.activeTurnLabel
         ]}>
-          <Text style={styles.labelText}>Right {getCurrentTurnRelative() === 1 ? '(Turn)' : ''}</Text>
+          <Text style={styles.labelText}>Right {currentTurnRelative === 1 ? '(Turn)' : ''}</Text>
         </View>
         <View style={[
           styles.positionLabel, 
           styles.leftPositionLabel,
-          getCurrentTurnRelative() === 3 && styles.activeTurnLabel
+          currentTurnRelative === 3 && styles.activeTurnLabel
         ]}>
-          <Text style={styles.labelText}>Left {getCurrentTurnRelative() === 3 ? '(Turn)' : ''}</Text>
+          <Text style={styles.labelText}>Left {currentTurnRelative === 3 ? '(Turn)' : ''}</Text>
         </View>
         <View style={[
           styles.positionLabel, 
           styles.bottomPositionLabel,
-          getCurrentTurnRelative() === 0 && styles.activeTurnLabel
+          currentTurnRelative === 0 && styles.activeTurnLabel
         ]}>
-          <Text style={styles.labelText}>You {getCurrentTurnRelative() === 0 ? '(Turn)' : ''}</Text>
+          <Text style={styles.labelText}>You {currentTurnRelative === 0 ? '(Turn)' : ''}</Text>
         </View>
       </View>
     </View>
@@ -185,6 +189,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'yellow',
   },
+  turnIndicator: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  turnIndicatorText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  }
 });
 
 export default GameTable;

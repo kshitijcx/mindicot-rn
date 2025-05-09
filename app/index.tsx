@@ -26,7 +26,8 @@ export default function App() {
     gameStarted: false,
     gameOver: false,
     winner: null,
-    myTurn: false
+    myTurn: false,
+    currentTurn: null // Add this to track current turn
   });
 
   // Initialize socket connection
@@ -56,7 +57,8 @@ export default function App() {
         gameStarted: false,
         gameOver: false,
         winner: null,
-        myTurn: false
+        myTurn: false,
+        currentTurn: null
       });
     });
 
@@ -67,6 +69,38 @@ export default function App() {
       }
     };
   }, []);
+
+  // Helper function to convert server-side player ID to player index in currentTrick
+  const getPlayerIndexFromId = (playerId) => {
+    if (!socket) return -1;
+    
+    // Find the index of this player in the game
+    if (socket.id === playerId) {
+      return gameState.playerIndex;
+    }
+    
+    // For other players, we need to base it on the order of connection
+    // This is a simplification and might need adjustment based on your server's player tracking
+    if (gameState.playerIndex === 0) {
+      // If I'm player 0, other players are 1, 2, 3
+      // This is a simplified approach - ideally server would send actual indices
+      const knownPlayers = gameState.currentTrick
+        .filter(p => p.playerId !== socket.id)
+        .map(p => p.playerId);
+        
+      if (!knownPlayers.includes(playerId)) {
+        // First time seeing this player
+        return knownPlayers.length + 1;
+      } else {
+        // We've seen this player before
+        return knownPlayers.indexOf(playerId) + 1;
+      }
+    }
+    
+    // Similar logic for other player indices
+    // This is imperfect and should be replaced with server-sent indices
+    return -1;
+  };
 
   // Socket event handlers
   useEffect(() => {
@@ -97,53 +131,73 @@ export default function App() {
         hand: hand.map(card => ({ suit: card.suit, rank: card.rank })),
         trumpSuit: trump,
         gameStarted: true,
-        myTurn: playerIndex === 0, // First player starts
-        currentTrick: []
+        currentTrick: [],
+        // Don't set myTurn here, we'll get it from current_turn event
       }));
+      
+      // Request current turn information
+      socket.emit('get_current_turn');
     });
 
-    socket.on('card_played', ({ playerId, card }) => {
-      console.log('Card played', playerId, card);
+    socket.on('card_played', ({ playerId, card, nextTurn }) => {
+      console.log('Card played', playerId, card, 'Next turn:', nextTurn);
+      
       setGameState(prev => {
-        // Add card to current trick
-        const updatedTrick = [...prev.currentTrick, { playerId, card }];
+        // Figure out the player index for this card
+        const playerIndex = gameState.currentTrick.length === 0 ? 
+          (prev.currentTurn !== null ? prev.currentTurn : 0) : 
+          (prev.currentTurn !== null ? prev.currentTurn : 0);
+          
+        // Add card to current trick with player index
+        const updatedTrick = [...prev.currentTrick, { 
+          playerIndex, 
+          card: { suit: card.suit, rank: card.rank } 
+        }];
         
-        // Calculate if it's my turn
-        // The next player is determined by trick length (player after the last one who played)
-        const nextPlayerIndex = (updatedTrick.length) % 4;
-        const isMyTurn = nextPlayerIndex === prev.playerIndex;
+        // Update current turn if provided
+        const newCurrentTurn = nextTurn !== undefined ? nextTurn : prev.currentTurn;
         
-        console.log(`Card played, next player: ${nextPlayerIndex}, my index: ${prev.playerIndex}, my turn: ${isMyTurn}`);
+        // Check if it's my turn now
+        const isMyTurn = newCurrentTurn === prev.playerIndex;
+        
+        console.log(`Card played, next player: ${newCurrentTurn}, my index: ${prev.playerIndex}, my turn: ${isMyTurn}`);
         
         return {
           ...prev,
           currentTrick: updatedTrick,
+          currentTurn: newCurrentTurn,
           myTurn: isMyTurn
         };
       });
     });
 
-    socket.on('trick_complete', ({ tricksWon, tensCount }) => {
-      console.log('Trick complete', tricksWon, tensCount);
+    socket.on('trick_complete', ({ tricksWon, tensCount, nextTurn }) => {
+      console.log('Trick complete', tricksWon, tensCount, 'Next turn:', nextTurn);
       
-      // The server needs to tell us who won the trick and gets to play next
-      // Since we don't have that info, we'll use a Socket.io emit to get current turn
-      socket.emit('get_current_turn');
-      
-      setGameState(prev => ({
-        ...prev,
-        tricksWon,
-        tensCount,
-        currentTrick: [],
-        // We'll update myTurn when we receive the current_turn event
-      }));
+      setGameState(prev => {
+        // Update current turn if provided
+        const newCurrentTurn = nextTurn !== undefined ? nextTurn : prev.currentTurn;
+        
+        // Check if it's my turn now
+        const isMyTurn = newCurrentTurn === prev.playerIndex;
+        
+        return {
+          ...prev,
+          tricksWon,
+          tensCount,
+          currentTrick: [], // Clear the trick
+          currentTurn: newCurrentTurn,
+          myTurn: isMyTurn
+        };
+      });
     });
     
-    // Add new event listener for current turn updates
+    // Add event listener for current turn updates
     socket.on('current_turn', (turnIndex) => {
       console.log('Current turn received:', turnIndex);
       setGameState(prev => ({
         ...prev,
+        currentTurn: turnIndex,
         myTurn: turnIndex === prev.playerIndex
       }));
     });
@@ -177,7 +231,8 @@ export default function App() {
         gameStarted: false,
         gameOver: false,
         winner: null,
-        myTurn: false
+        myTurn: false,
+        currentTurn: null
       }));
     });
 
@@ -197,17 +252,25 @@ export default function App() {
       socket.off('game_start');
       socket.off('card_played');
       socket.off('trick_complete');
+      socket.off('current_turn');
       socket.off('game_over');
       socket.off('game_reset');
       socket.off('invalid_move');
       socket.off('error');
     };
-  }, [socket]);
+  }, [socket, gameState.playerIndex]);
 
   // Join game handler
   const handleJoinGame = () => {
     if (!socket || !connected) return;
     socket.emit('join_game');
+    
+    // Request the current turn state immediately after joining
+    setTimeout(() => {
+      if (socket && connected) {
+        socket.emit('get_current_turn');
+      }
+    }, 1000); // Small delay to ensure join has happened
   };
 
   // Play card handler
@@ -219,7 +282,7 @@ export default function App() {
     setGameState(prev => ({
       ...prev,
       hand: prev.hand.filter(c => !(c.suit === card.suit && c.rank === card.rank)),
-      myTurn: false
+      myTurn: false // Set myTurn to false until server confirms next turn
     }));
   };
 
@@ -274,11 +337,15 @@ export default function App() {
           <Text style={[styles.statusText, gameState.myTurn ? styles.yourTurn : {}]}>
             {gameState.myTurn ? "Your Turn!" : "Waiting for other player..."}
           </Text>
+          <Text style={styles.debugText}>
+            Current Turn Player: {gameState.currentTurn !== null ? gameState.currentTurn : 'Unknown'}
+          </Text>
         </View>
         
         <GameTable 
           currentTrick={gameState.currentTrick}
           playerIndex={gameState.playerIndex}
+          currentTurn={gameState.currentTurn}
         />
         
         <PlayerHand 
@@ -363,4 +430,9 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: 'bold',
   },
+  debugText: {
+    color: '#BBB',
+    fontSize: 12,
+    fontStyle: 'italic',
+  }
 });
