@@ -1,61 +1,78 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-interface CardProps {
-  suit: string;
-  value: string;
-  onPress?: () => void;
-  disabled?: boolean;
-}
-
-export default function Card({ suit, value, onPress, disabled }: CardProps) {
+const Card = ({ suit, rank, onPress, disabled = false }) => {
+  // Set color based on suit
   const isRed = suit === '♥' || suit === '♦';
-
+  const cardColor = isRed ? '#D32F2F' : '#000000';
+  
+  // Format rank for display (e.g., '10' stays as '10', but 'A' becomes 'A')
+  const displayRank = rank.toString();
+  
   return (
     <TouchableOpacity
-      onPress={onPress}
+      style={[styles.card, disabled && styles.disabled]}
+      onPress={() => !disabled && onPress && onPress({ suit, rank })}
       disabled={disabled}
-      style={[styles.container, disabled && styles.disabled]}
+      activeOpacity={disabled ? 1 : 0.7}
     >
-      <View style={styles.card}>
-        <Text style={[styles.value, isRed && styles.redText]}>{value}</Text>
-        <Text style={[styles.suit, isRed && styles.redText]}>{suit}</Text>
+      <View style={styles.cornerTop}>
+        <Text style={[styles.rank, { color: cardColor }]}>{displayRank}</Text>
+        <Text style={[styles.suit, { color: cardColor }]}>{suit}</Text>
+      </View>
+      
+      <Text style={[styles.centerSuit, { color: cardColor }]}>{suit}</Text>
+      
+      <View style={[styles.cornerBottom]}>
+        <Text style={[styles.suit, { color: cardColor }]}>{suit}</Text>
+        <Text style={[styles.rank, { color: cardColor }]}>{displayRank}</Text>
       </View>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    margin: 5,
-  },
   card: {
-    width: 60,
-    height: 90,
-    backgroundColor: 'white',
+    width: 70,
+    height: 100,
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    padding: 5,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#CCCCCC',
+    margin: 4,
+    padding: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 2,
+    position: 'relative',
   },
-  value: {
-    fontSize: 20,
+  disabled: {
+    opacity: 0.6,
+  },
+  cornerTop: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    alignItems: 'center',
+  },
+  cornerBottom: {
+    position: 'absolute',
+    bottom: 3,
+    right: 3,
+    alignItems: 'center',
+    transform: [{ rotate: '180deg' }],
+  },
+  rank: {
+    fontSize: 14,
     fontWeight: 'bold',
   },
   suit: {
-    fontSize: 24,
+    fontSize: 12,
   },
-  redText: {
-    color: 'red',
+  centerSuit: {
+    fontSize: 26,
+    fontWeight: 'bold',
   },
-  disabled: {
-    opacity: 0.5,
-  },
-}); 
+});
+
+export default Card;
